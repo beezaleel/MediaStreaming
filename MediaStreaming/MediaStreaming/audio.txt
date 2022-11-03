@@ -1,0 +1,6 @@
+adventure uncompressed ./sounds/music/uncompressed/adventure.wav channel1
+arcade uncompressed ./sounds/music/uncompressed/arcade.wav channel2
+retro uncompressed ./sounds/music/uncompressed/retro.wav channel3
+adventure compressed ./sounds/music/compressed/adventure.mp3 channel1
+arcade compressed ./sounds/music/compressed/arcade.mp3 channel2
+retro compressed ./sounds/music/compressed/retro.mp3 channel3
