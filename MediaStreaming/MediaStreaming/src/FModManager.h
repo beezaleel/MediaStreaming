@@ -12,8 +12,26 @@ public:
 		FMOD::ChannelGroup* groupPtr;
 		float currentPan;
 		float dspPitch;
+		float dspFader;
+		float dspCompressor;
+		float dspEcho;
+		float dspOscillator;
+		float dspTremolo;
+		float dspPan;
+		float dspDistortion;
+		float dspParameq;
 
-		ChannelGroup() : groupPtr(nullptr), currentPan(0.0f), dspPitch(1.0f) {}
+		ChannelGroup() : 
+			groupPtr(nullptr), 
+			currentPan(0.0f), 
+			dspPitch(1.0f), 
+			dspFader(0.0f), 
+			dspCompressor(2.5f), 
+			dspEcho(500.0f), 
+			dspOscillator(0.0f), 
+			dspTremolo(5.0f), 
+			dspPan(0.0f), 
+			dspDistortion(0.5f), dspParameq(8000.0f) {}
 	};
 
 protected:

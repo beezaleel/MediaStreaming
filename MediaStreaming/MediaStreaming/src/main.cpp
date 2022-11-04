@@ -1,18 +1,19 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+
 #include <Windows.h>
+
 #include <iostream>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <thread>
 
 #include "FModManager.h"
 #include "SoundControl.h"
-
-//GLFWwindow* window;
-//Game game;
 
 #define ROBOT_TEXT_COLOR 13
 #define USER_TEXT_COLOR 2
@@ -26,6 +27,8 @@ struct Audio {
 	std::string path;
 	FMOD::Sound* sound;
 };
+
+GLFWwindow* window;
 
 // Stores the secret and the guessed number
 struct PlayersInput {
@@ -49,6 +52,7 @@ unsigned int microsecond = 9000;
 
 bool player2sTurn = false;
 bool gameOver = false;
+bool isDspEnabled = false;
 bool g_isCompressed = true;
 
 std::map<std::string, Audio> backgrounds;
@@ -63,7 +67,7 @@ const std::string COMPRESSED = "compressed";
 Result player1Result;
 Result player2Result;
 
-void SetDspState(bool, std::string, std::string);
+void SetDspState(bool&, std::string, std::string);
 PlayersInput GetInputFromComputer();
 PlayersInput GetInputFromPlayer();
 void Update();
@@ -71,6 +75,68 @@ void ProcessUserInput(PlayersInput, bool);
 bool Initialize();
 bool AddDspEffect();
 void LoadAudioFiles(std::string, int, bool isCompressed = true);
+void RenderSoundControl();
+
+void KeycallBack(GLFWwindow* window, const int key, int scancode, const int action, const int mods) {
+	// End game
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
+
+	// Play channel group 1
+	if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
+		fmodManager.StopSound();
+		if (!fmodManager._PlaySound("adventure", "channel1"))
+			return;
+	}
+	// Play channel group 2
+	if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
+		fmodManager.StopSound();
+		if (!fmodManager._PlaySound("arcade", "channel2"))
+			return;
+	}
+	// Play channel group 3
+	if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
+		fmodManager.StopSound();
+		if (!fmodManager._PlaySound("retro", "channel3"))
+			return;
+	}
+
+	// E to enable/disable pitch dsp
+	if (key == GLFW_KEY_E && action == GLFW_PRESS)
+		SetDspState(isDspEnabled, "channel1", "pitch");
+
+	// R to enable/disable fader dsp
+	if (key == GLFW_KEY_R && action == GLFW_PRESS)
+		SetDspState(isDspEnabled, "channel1", "fader");
+
+	// T to enable/disable compressor dsp
+	if (key == GLFW_KEY_T && action == GLFW_PRESS)
+		SetDspState(isDspEnabled, "channel1", "compressor");
+
+	// Y to enable/disable echo dsp
+	if (key == GLFW_KEY_Y && action == GLFW_PRESS)
+		SetDspState(isDspEnabled, "channel2", "echo");
+
+	// U to enable/disable oscillator dsp
+	if (key == GLFW_KEY_U && action == GLFW_PRESS)
+		SetDspState(isDspEnabled, "channel2", "oscillator");
+
+	// I to enable/disable tremolo dsp
+	if (key == GLFW_KEY_I && action == GLFW_PRESS)
+		SetDspState(isDspEnabled, "channel2", "tremolo");
+
+	// O to enable/disable pan dsp
+	if (key == GLFW_KEY_O && action == GLFW_PRESS)
+		SetDspState(isDspEnabled, "channel3", "pan");
+
+	// P to enable/disable convolution dsp
+	if (key == GLFW_KEY_P && action == GLFW_PRESS)
+		SetDspState(isDspEnabled, "channel3", "distortion");
+
+	// D to enable/disable parameq dsp
+	if (key == GLFW_KEY_D && action == GLFW_PRESS)
+		SetDspState(isDspEnabled, "channel3", "parameq");
+}
 
 /// <summary>
 /// Changes the console color for each user. It helps different the users and adds little live to the game.
@@ -99,9 +165,6 @@ int main(int argc, char* argv[])
 	// Clear the screen
 	system("cls");
 
-	Initialize();
-	srand((unsigned int)time(NULL));
-
 	std::cout << R"(
                                                                                           
   ____  _   _  _____  ____  ____        _       _   _  _   _  __  __  ____   _____  ____  
@@ -111,6 +174,9 @@ int main(int argc, char* argv[])
  \____| \___/ |_____||____/|____/   /_/   \_\  |_| \_| \___/ |_|  |_||____/ |_____||_| \_\
                                                                                           
 		)" << '\n';
+
+	Initialize();
+	srand((unsigned int)time(NULL));
 
 	printf("\n");
 	ChangeConsoleColor(ROBOT_TEXT_COLOR, "Hello! My name is Jane. Would you like to play a number guessing game with me? Please enter your name");
@@ -124,12 +190,48 @@ int main(int argc, char* argv[])
 	printf("\n");
 	printf("\n");
 
-	Update();
+	//std::thread renderThread(RenderSoundControl);
+	glfwInit();
+	window = glfwCreateWindow(1000, 600, "Sound Controller", nullptr, nullptr);
+
+	if (!window)
+	{
+		return 1;
+	}
+	glfwMakeContextCurrent(window);
+
+	if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
+		return 2;
+	}
+
+	glfwSetKeyCallback(window, KeycallBack);
+
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+	//initialize imgui
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+
+	//platform / render bindings
+	if (!ImGui_ImplGlfw_InitForOpenGL(window, true) || !ImGui_ImplOpenGL3_Init("#version 460"))
+	{
+		return 3;
+	}
+
+	//imgui style (dark mode for the win)
+	ImGui::StyleColorsDark();
+
+	std::thread renderThread(Update);
+	RenderSoundControl();
+
+	fmodManager.Shutdown();
 
 	return 0;
 }
 
 void Update() {
+
 	PlayersInput playersInput;
 
 	while (!gameOver) {
@@ -144,7 +246,7 @@ void Update() {
 		player2sTurn = !player2sTurn;
 		printf("\n");
 
-		// Check if both players have attempted 5 times each
+		// Check if both players have attempted 3 times each
 		if ((player1Result.totalAttempt + player2Result.totalAttempt) == TOTAL_ATTEMPS) {
 			if (player1Result.score > player2Result.score) {
 				ChangeConsoleColor(UMPIRE_TEXT_COLOR, UMPIRE_NAME + ": THE WINNER IS " +
@@ -169,6 +271,7 @@ void Update() {
 			}
 
 			gameOver = true;
+			exit(0);
 		}
 	}
 }
@@ -316,14 +419,14 @@ void LoadAudioFiles(std::string filename, int mode, bool isCompressed)
 /// </summary>
 /// <returns></returns>
 bool AddDspEffect() {
-	if (!fmodManager.CreateDsp("echo", FMOD_DSP_TYPE_ECHO, 800.0f) ||
+	if (!fmodManager.CreateDsp("echo", FMOD_DSP_TYPE_ECHO, 500.0f) ||
 		!fmodManager.CreateDsp("pitch", FMOD_DSP_TYPE_PITCHSHIFT, 0.7f) ||
-		!fmodManager.CreateDsp("fader", FMOD_DSP_TYPE_FADER, -10.0f) ||
+		!fmodManager.CreateDsp("fader", FMOD_DSP_TYPE_FADER, 0.0f) ||
 		!fmodManager.CreateDsp("compressor", FMOD_DSP_TYPE_COMPRESSOR, -22.0f) ||
 		!fmodManager.CreateDsp("oscillator", FMOD_DSP_TYPE_OSCILLATOR, 0.0f) ||
 		!fmodManager.CreateDsp("tremolo", FMOD_DSP_TYPE_TREMOLO, 5.0f) ||
-		!fmodManager.CreateDsp("pan", FMOD_DSP_TYPE_PAN, -50.0f) ||
-		!fmodManager.CreateDsp("distortion", FMOD_DSP_TYPE_DISTORTION, 0.8f) ||
+		!fmodManager.CreateDsp("pan", FMOD_DSP_TYPE_PAN, 0.0f) ||
+		!fmodManager.CreateDsp("distortion", FMOD_DSP_TYPE_DISTORTION, 0.5f) ||
 		!fmodManager.CreateDsp("parameq", FMOD_DSP_TYPE_PARAMEQ, 10000.0f))
 	{
 		return false;
@@ -348,3 +451,31 @@ void SetDspState(bool& isEnabled, std::string channelName, std::string name) {
 	}
 }
 
+void RenderSoundControl() {
+	while (!glfwWindowShouldClose(window)) {
+		//poll for user events
+		glfwPollEvents();
+
+		//clear the back buffer
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		soundControl.Render();
+
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		//present to the user
+		glfwSwapBuffers(window);
+	}
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
+	glfwTerminate();
+	exit(0);
+}
