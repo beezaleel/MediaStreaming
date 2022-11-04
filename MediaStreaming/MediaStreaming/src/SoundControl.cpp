@@ -244,3 +244,14 @@ void SoundControl::Render() {
 
 	ImGui::End();
 }
+
+void SoundControl::Details(std::string name, FModManager::ChannelGroup* channelGroup) {
+	ImGui::Begin("Sound Details");
+
+	FMOD::Sound* sound;
+	if (!fmodManager->FindSound(name, &sound))
+		return;
+
+	ImGui::Text("userData %s");
+	ImGui::End();
+}

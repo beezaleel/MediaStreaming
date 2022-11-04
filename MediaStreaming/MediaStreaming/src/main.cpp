@@ -28,8 +28,6 @@ struct Audio {
 	FMOD::Sound* sound;
 };
 
-GLFWwindow* window;
-
 // Stores the secret and the guessed number
 struct PlayersInput {
 	int secretNo;
@@ -41,6 +39,8 @@ struct Result {
 	int totalAttempt;
 	int score;
 };
+
+GLFWwindow* window;
 
 const std::string UMPIRE_NAME = "Umpire";
 
@@ -85,19 +85,19 @@ void KeycallBack(GLFWwindow* window, const int key, int scancode, const int acti
 	// Play channel group 1
 	if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
 		fmodManager.StopSound();
-		if (!fmodManager._PlaySound("adventure", "channel1"))
+		if (!fmodManager._PlaySound("adventure", "channel1")) // Added background music `adventure` to `channel1`
 			return;
 	}
 	// Play channel group 2
 	if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
 		fmodManager.StopSound();
-		if (!fmodManager._PlaySound("arcade", "channel2"))
+		if (!fmodManager._PlaySound("arcade", "channel2")) // Added background music `arcade` to `channel2`
 			return;
 	}
 	// Play channel group 3
 	if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
 		fmodManager.StopSound();
-		if (!fmodManager._PlaySound("retro", "channel3"))
+		if (!fmodManager._PlaySound("retro", "channel3")) // Added background music `retro` to `channel3`
 			return;
 	}
 
@@ -145,9 +145,9 @@ void KeycallBack(GLFWwindow* window, const int key, int scancode, const int acti
 /// <param name="message">The string message</param>
 void ChangeConsoleColor(int color, std::string message) {
 	if (color == ROBOT_TEXT_COLOR)
-		fmodManager._PlaySound("keyboard", "fx");
+		fmodManager._PlaySound("keyboard", "fx"); // Added Sound fx `keyboard`.
 	else if (color == USER_TEXT_COLOR)
-		fmodManager._PlaySound("ping", "fx");
+		fmodManager._PlaySound("ping", "fx"); // Added Sound fx `ping`.
 
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 	printf("%s\n", message.c_str());
@@ -190,7 +190,6 @@ int main(int argc, char* argv[])
 	printf("\n");
 	printf("\n");
 
-	//std::thread renderThread(RenderSoundControl);
 	glfwInit();
 	window = glfwCreateWindow(1000, 600, "Sound Controller", nullptr, nullptr);
 
@@ -208,18 +207,15 @@ int main(int argc, char* argv[])
 
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-	//initialize imgui
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 
-	//platform / render bindings
 	if (!ImGui_ImplGlfw_InitForOpenGL(window, true) || !ImGui_ImplOpenGL3_Init("#version 460"))
 	{
 		return 3;
 	}
 
-	//imgui style (dark mode for the win)
 	ImGui::StyleColorsDark();
 
 	std::thread renderThread(Update);
@@ -253,20 +249,20 @@ void Update() {
 					player1 + "!!! WITH A SCORE OF " + std::to_string(player1Result.score) +
 					" " + player2 + " scored " + std::to_string(player2Result.score));
 
-				fmodManager._PlaySound("failed", "fx");
+				fmodManager._PlaySound("failed", "fx"); // Added Sound fx `failed`.
 				Sleep(5000); // Waiting 2 seconds before annoucing result. 
 			}
 			else if (player2Result.score > player1Result.score) {
 				ChangeConsoleColor(UMPIRE_TEXT_COLOR, UMPIRE_NAME + ": THE WINNER IS " +
 					player2 + "!!! WITH A SCORE OF " + std::to_string(player2Result.score) +
 					" " + player1 + " scored " + std::to_string(player1Result.score));
-				fmodManager._PlaySound("success", "fx");
+				fmodManager._PlaySound("success", "fx"); // Added Sound fx `success`.
 				Sleep(5000); // Waiting 2 seconds before annoucing result.
 			}
 			else {
 				ChangeConsoleColor(UMPIRE_TEXT_COLOR, UMPIRE_NAME + ": NO WINNER, " +
 					player1 + " AND " + player2 + " SCORED THE SAME " + std::to_string(player1Result.score));
-				fmodManager._PlaySound("nowinner", "fx");
+				fmodManager._PlaySound("nowinner", "fx"); // Added Sound fx `nowinner`.
 				Sleep(5000); // Waiting 2 seconds before annoucing result.
 			}
 
@@ -281,13 +277,13 @@ PlayersInput GetInputFromComputer() {
 	PlayersInput input;
 	// Create a random generator. Generate an int from 1 to 3
 	ChangeConsoleColor(ROBOT_TEXT_COLOR, player1 + ": I'm thinking of a number...");
-	fmodManager._PlaySound("clock", "fx");
+	fmodManager._PlaySound("clock", "fx"); // Added Sound fx `clock`.
 	secret = rand() % 3 + 1;
 	Sleep(microsecond);
 	ChangeConsoleColor(ROBOT_TEXT_COLOR, player1 + ": Okay " + player2 + ", can you guess now");
 	printf("--> ");
 	std::cin >> guess;
-	fmodManager._PlaySound("ping", "fx");
+	fmodManager._PlaySound("ping", "fx"); // Added Sound fx `ping`.
 
 	input.secretNo = secret;
 	input.guessedNo = guess;
@@ -302,11 +298,11 @@ PlayersInput GetInputFromPlayer() {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), USER_TEXT_COLOR);
 	printf("--> ");
 	std::cin >> secret;
-	fmodManager._PlaySound("ping", "fx");
+	fmodManager._PlaySound("ping", "fx"); // Added Sound fx `ping`.
 	ChangeConsoleColor(USER_TEXT_COLOR, player2 + ": Okay " + player1 + ", can you guess now");
 	ChangeConsoleColor(ROBOT_TEXT_COLOR, player1 + ": I'm trying to guess . . . ");
 	guess = rand() % 3 + 1;
-	fmodManager._PlaySound("clock", "fx");
+	fmodManager._PlaySound("clock", "fx"); // Added Sound fx `clock`.
 	Sleep(microsecond);
 	ChangeConsoleColor(ROBOT_TEXT_COLOR, player1 + ": The number is " + std::to_string(guess));
 
@@ -324,12 +320,12 @@ void ProcessUserInput(PlayersInput input, bool player2sTurn) {
 		if (input.guessedNo == input.secretNo) {
 			player2Result.score += 1;
 			player2Result.totalAttempt += 1;
-			fmodManager._PlaySound("correct", "fx");
+			fmodManager._PlaySound("correct", "fx"); // Added Sound fx `pcorrecting`.
 			ChangeConsoleColor(RIGHT, UMPIRE_NAME + ": You are right " + player2 + " the number is " + std::to_string(input.secretNo));
 		}
 		else {
 			player2Result.totalAttempt += 1;
-			fmodManager._PlaySound("wrong", "fx");
+			fmodManager._PlaySound("wrong", "fx"); // Added Sound fx `wrong`.
 			ChangeConsoleColor(WRONG, UMPIRE_NAME + ": Wrong " + player2 + " the number is " + std::to_string(input.secretNo));
 		}
 	}
@@ -337,11 +333,11 @@ void ProcessUserInput(PlayersInput input, bool player2sTurn) {
 		if (input.guessedNo == input.secretNo) {
 			player1Result.score += 1;
 			player1Result.totalAttempt += 1;
-			fmodManager._PlaySound("correct", "fx");
+			fmodManager._PlaySound("correct", "fx"); // Added Sound fx `correct`.
 			ChangeConsoleColor(RIGHT, UMPIRE_NAME + ": You are right " + player1 + " the number is " + std::to_string(input.secretNo));
 		}
 		else {
-			fmodManager._PlaySound("wrong", "fx");
+			fmodManager._PlaySound("wrong", "fx"); // Added Sound fx `wrong`.
 			player1Result.totalAttempt += 1;
 			ChangeConsoleColor(WRONG, UMPIRE_NAME + ": Wrong " + player1 + " the number is " + std::to_string(input.secretNo));
 		}

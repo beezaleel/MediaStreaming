@@ -4,6 +4,7 @@
 #include <FMOD/fmod_errors.h>
 #include <string>
 
+
 class FModManager
 {
 public:
@@ -52,6 +53,7 @@ public:
 	bool CreateChannelGroup(const std::string& name);
 	void RemoveChannelGroup(const std::string& name);
 	bool FindChannelGroup(const std::string& name, ChannelGroup** channelGroup);
+	bool FindSound(const std::string& name, FMOD::Sound** sound);
 
 	bool GetChannelGroupVolume(const std::string& name, float* volume);
 	bool SetChannelGroupVolume(const std::string& name, float volume);

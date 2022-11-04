@@ -86,9 +86,6 @@
     <ClInclude Include="src\SoundControl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="audio.txt" />

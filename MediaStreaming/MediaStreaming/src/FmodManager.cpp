@@ -76,6 +76,19 @@ bool FModManager::FindChannelGroup(const std::string& name, ChannelGroup** chann
 	return true;
 }
 
+bool FModManager::FindSound(const std::string& name, FMOD::Sound** sound)
+{
+	const auto iterator = sounds.find(name);
+	if (iterator == sounds.end())
+	{
+		return false;
+	}
+
+	*sound = iterator->second;
+
+	return true;
+}
+
 bool FModManager::GetChannelGroupVolume(const std::string& name, float* volume)
 {
 	const auto iterator = channelGroups.find(name);
